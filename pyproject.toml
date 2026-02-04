@@ -1,0 +1,14 @@
+[project]
+name = "tax-chatbot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=1.2.8",
+    "langchain-community>=0.4.1",
+    "langchain-openai>=1.1.7",
+    "langchain-pinecone>=0.2.13",
+    "python-dotenv>=1.2.1",
+    "streamlit>=1.53.1",
+]
