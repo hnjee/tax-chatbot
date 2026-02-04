@@ -102,7 +102,6 @@ def get_history_rag_chain():
         "{context}"
     )
     
-
     # Few-shot 예시용 프롬프트 템플릿
     example_prompt = ChatPromptTemplate.from_messages(
         [
