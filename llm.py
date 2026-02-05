@@ -21,7 +21,7 @@ def get_session_history(session_id: str) -> BaseChatMessageHistory:
 
 
 def get_llm(model='gpt-4o-mini'):
-    llm = ChatOpenAI(model=model)
+    llm = ChatOpenAI(model=model, temperature=0.1)
     return llm
 
 def get_retriever():
