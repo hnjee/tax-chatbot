@@ -86,6 +86,11 @@ def get_chat_history_chain():
     return chat_history_chain
 
 
+def format_docs(docs):
+    """검색된 문서들을 하나의 context 문자열로 포맷팅"""
+    return "\n\n---\n\n".join([doc.page_content for doc in docs])
+
+
 def get_history_rag_chain():
     """LCEL을 사용한 RAG 체인 (히스토리 + Few-shot 포함)"""
     llm = get_llm()
@@ -125,11 +130,7 @@ def get_history_rag_chain():
             ("human", "{input}")
         ]
     )
-
-    def format_docs(docs):
-        """검색된 문서들을 하나의 context 문자열로 포맷팅"""
-        return "\n\n---\n\n".join([doc.page_content for doc in docs])
-
+    
     def contextualized_retrieval(input_dict):
         """retriever 전에 대화 히스토리가 있으면 쿼리를 재구성하고, 없으면 원래 질문 사용"""
         query = input_dict["input"]
@@ -189,3 +190,62 @@ def get_ai_response(user_message):
     )
     return ai_message
     
+
+def get_ai_response_for_eval(user_message):
+    """
+    Evaluation 전용: Single-turn RAG 평가
+    - 대화 히스토리 없음
+    - Retriever 1회만 호출
+    - contexts = 실제 답변에 사용된 문서
+    """
+    # 1. 키워드 전처리
+    keyword_dictionary_chain = get_keyword_dictionary_chain()
+    processed_question = keyword_dictionary_chain.invoke({"question": user_message})
+    
+    # 2. Retriever로 문서 검색 (1회만!)
+    retriever = get_retriever()
+    retrieved_docs = retriever.invoke(processed_question)
+    
+    # 3. contexts 포맷팅
+    contexts = format_docs(retrieved_docs)
+    
+    # 4. 프롬프트 직접 구성 (history_rag_chain 내부 로직 재현, 히스토리 제외)
+    llm = get_llm()
+    
+    system_prompt = (
+        "당신은 소득세법 전문가입니다. "
+        "사용자의 소득세법 관련 질문에 아래 제공된 검색된 문맥을 사용하여 답변하세요. "
+        "답을 모르는 경우, 모른다고 말하세요. "
+        "답변을 제공할 때는 소득세법 (XX조)에 따르면 이라고 시작하면서 답변해주시고, "
+        "아래 예시들을 참고하여 비슷한 형식과 톤으로 답변해주세요."
+        "\n\n"
+        f"{contexts}"
+    )
+    
+    # Few-shot 예시용 프롬프트
+    example_prompt = ChatPromptTemplate.from_messages([
+        ("human", "{input}"),
+        ("ai", "{answer}"),
+    ])
+    
+    few_shot_prompt = FewShotChatMessagePromptTemplate(
+        example_prompt=example_prompt,
+        examples=answer_examples,
+    )
+    
+    # 전체 프롬프트 구성 (히스토리 없음)
+    qa_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        few_shot_prompt,
+        ("human", "{input}")
+    ])
+    
+    # 5. 답변 생성 (대화 히스토리 없이)
+    chain = qa_prompt | llm | StrOutputParser()
+    answer = chain.invoke({"input": processed_question})
+    
+    # 6. 답변 + contexts 함께 반환
+    return {
+        "answer": answer,
+        "contexts": contexts
+    }

@@ -5,10 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "ipykernel>=7.1.0",
     "langchain>=1.2.8",
     "langchain-community>=0.4.1",
     "langchain-openai>=1.1.7",
     "langchain-pinecone>=0.2.13",
+    "langsmith>=0.6.8",
     "python-dotenv>=1.2.1",
     "streamlit>=1.53.1",
 ]
