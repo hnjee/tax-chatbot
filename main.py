@@ -28,6 +28,7 @@ def main():
                 ai_message = st.write_stream(ai_response)
                 st.session_state.message_list.append({"role": "ai", "content": ai_message})
 
-
+    #PR을 위한 주석입니다
+    
 if __name__ == "__main__":
     main()
